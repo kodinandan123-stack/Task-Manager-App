@@ -1,127 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TaskFlow — Task Manager</title>
-  <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TaskFlow — Task Manager</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-icon">◈</span>
-        <span class="logo-text">TaskFlow</span>
-      </div>
-      <div class="stats-bar">
-        <div class="stat">
-          <span class="stat-num" id="totalCount">0</span>
-          <span class="stat-label">Total</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-num" id="completedCount">0</span>
-          <span class="stat-label">Done</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-num" id="pendingCount">0</span>
-          <span class="stat-label">Pending</span>
-        </div>
-      </div>
+<!-- MODAL -->
+<div id="overlay" class="overlay hidden">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">New Task</h2>
+      <button class="x-btn" id="closeModal">&#10005;</button>
     </div>
-    <!-- Progress bar -->
-    <div class="progress-wrap">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-  </header>
-
-  <main class="main">
-
-    <!-- Add Task Button -->
-    <div class="top-row">
-      <div class="filter-group">
-        <select id="filterCategory" class="filter-select">
-          <option value="All">All Categories</option>
-          <option value="Work">Work</option>
-          <option value="Study">Study</option>
-          <option value="Personal">Personal</option>
-        </select>
-        <select id="filterStatus" class="filter-select">
-          <option value="All">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Completed">Completed</option>
-        </select>
-      </div>
-      <button class="btn-add" id="openModal">+ New Task</button>
-    </div>
-
-    <!-- Task Grid -->
-    <div class="task-grid" id="taskGrid">
-      <div class="empty-state" id="emptyState">
-        <div class="empty-icon">✦</div>
-        <p>No tasks yet. Create your first one!</p>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Modal Overlay -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" id="modal">
-      <div class="modal-header">
-        <h2 id="modalTitle">New Task</h2>
-        <button class="modal-close" id="closeModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="taskId" />
-
-        <div class="field">
-          <label>Task Title</label>
-          <input type="text" id="taskTitle" placeholder="What needs to be done?" />
+    <div class="modal-body">
+      <input type="hidden" id="editId"/>
+      <label>Title</label>
+      <input type="text" id="fTitle" placeholder="What needs to be done?"/>
+      <div class="row2">
+        <div>
+          <label>Category</label>
+          <select id="fCat">
+            <option value="Work">Work</option>
+            <option value="Study">Study</option>
+            <option value="Personal">Personal</option>
+          </select>
         </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label>Category</label>
-            <select id="taskCategory">
-              <option value="Work">Work</option>
-              <option value="Study">Study</option>
-              <option value="Personal">Personal</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Priority</label>
-            <select id="taskPriority">
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Status</label>
-          <div class="toggle-group">
-            <button class="toggle-btn active" data-value="Pending" id="togglePending">Pending</button>
-            <button class="toggle-btn" data-value="Completed" id="toggleCompleted">Completed</button>
-          </div>
-          <input type="hidden" id="taskStatus" value="Pending" />
+        <div>
+          <label>Priority</label>
+          <select id="fPri">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" id="cancelModal">Cancel</button>
-        <button class="btn-save" id="saveTask">Save Task</button>
+      <label>Status</label>
+      <div class="toggle-wrap">
+        <button class="tog active" id="togPending" data-val="Pending">Pending</button>
+        <button class="tog" id="togDone" data-val="Completed">Completed</button>
       </div>
+      <input type="hidden" id="fStatus" value="Pending"/>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" id="cancelModal">Cancel</button>
+      <button class="btn-save" id="saveTask">Save Task</button>
     </div>
   </div>
+</div>
 
-  <!-- Toast Notification -->
-  <div class="toast" id="toast"></div>
+<!-- APP -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo"><span class="logo-dot"></span>TaskFlow</div>
+    <div class="stats">
+      <div class="stat"><span id="sTot">0</span><small>Total</small></div>
+      <div class="sdiv"></div>
+      <div class="stat"><span id="sDone">0</span><small>Done</small></div>
+      <div class="sdiv"></div>
+      <div class="stat"><span id="sPend">0</span><small>Pending</small></div>
+    </div>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+</header>
 
-  <script src="script.js"></script>
+<main class="main">
+  <div class="toolbar">
+    <div class="filters">
+      <select class="fsel" id="fCatFilter">
+        <option value="All">All Categories</option>
+        <option value="Work">Work</option>
+        <option value="Study">Study</option>
+        <option value="Personal">Personal</option>
+      </select>
+      <select class="fsel" id="fStatusFilter">
+        <option value="All">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Completed">Completed</option>
+      </select>
+    </div>
+    <button class="add-btn" id="openModal">+ New Task</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="empty" id="empty">
+      <div class="empty-icon">✦</div>
+      <p>No tasks yet — add your first one!</p>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="script.js"></script>
 </body>
 </html>
