@@ -5,33 +5,35 @@ try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e) { tasks = 
 
 let editId = null;
 
-/* ── DOM ── */
-const overlay     = document.getElementById('overlay');
-const modal       = document.getElementById('modal');
-const modalTitle  = document.getElementById('modalTitle');
-const openModalBtn= document.getElementById('openModal');
-const closeModal  = document.getElementById('closeModal');
-const cancelModal = document.getElementById('cancelModal');
-const saveTask    = document.getElementById('saveTask');
-const grid        = document.getElementById('grid');
-const empty       = document.getElementById('empty');
-const toast       = document.getElementById('toast');
-const progFill    = document.getElementById('progFill');
+/* -- DOM -- */
+const overlay      = document.getElementById('overlay');
+const modal        = document.getElementById('modal');
+const modalTitle   = document.getElementById('modalTitle');
+const openModalBtn = document.getElementById('openModal');
+const closeModal   = document.getElementById('closeModal');
+const cancelModal  = document.getElementById('cancelModal');
+const saveTask     = document.getElementById('saveTask');
+const grid         = document.getElementById('grid');
+const empty        = document.getElementById('empty');
+const toast        = document.getElementById('toast');
+const progFill     = document.getElementById('progFill');
 
-const fTitle      = document.getElementById('fTitle');
-const fCat        = document.getElementById('fCat');
-const fPri        = document.getElementById('fPri');
-const fStatus     = document.getElementById('fStatus');
-const editId_el   = document.getElementById('editId');
-const togPending  = document.getElementById('togPending');
-const togDone     = document.getElementById('togDone');
-const fCatFilter  = document.getElementById('fCatFilter');
-const fStatusFilter=document.getElementById('fStatusFilter');
+const fTitle       = document.getElementById('fTitle');
+const fCat         = document.getElementById('fCat');
+const fPri         = document.getElementById('fPri');
+const fDue         = document.getElementById('fDue');
+const fStatus      = document.getElementById('fStatus');
+const togPending   = document.getElementById('togPending');
+const togDone      = document.getElementById('togDone');
+const fCatFilter   = document.getElementById('fCatFilter');
+const fStatusFilter= document.getElementById('fStatusFilter');
+const fSortFilter  = document.getElementById('fSortFilter');
+const searchInput  = document.getElementById('searchInput');
 
-/* ── Init ── */
+/* -- Init -- */
 render();
 
-/* ── Events ── */
+/* -- Events -- */
 openModalBtn.addEventListener('click', () => openMod(null));
 closeModal.addEventListener('click', closeMod);
 cancelModal.addEventListener('click', closeMod);
@@ -39,22 +41,26 @@ overlay.addEventListener('click', e => { if(e.target === overlay) closeMod(); })
 saveTask.addEventListener('click', doSave);
 fCatFilter.addEventListener('change', render);
 fStatusFilter.addEventListener('change', render);
+fSortFilter.addEventListener('change', render);
+searchInput.addEventListener('input', render);
 
 togPending.addEventListener('click', () => setStatus('Pending'));
-togDone.addEventListener('click',    () => setStatus('Completed'));
+togDone.addEventListener('click', () => setStatus('Completed'));
 
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') closeMod();
   if((e.ctrlKey||e.metaKey) && e.key === 'n'){ e.preventDefault(); openMod(null); }
+  if((e.ctrlKey||e.metaKey) && e.key === 'f'){ e.preventDefault(); searchInput.focus(); }
 });
 
-/* ── Modal open/close ── */
+/* -- Modal open/close -- */
 function openMod(task) {
   editId = task ? task.id : null;
   modalTitle.textContent = task ? 'Edit Task' : 'New Task';
-  fTitle.value    = task ? task.title : '';
-  fCat.value      = task ? task.category : 'Work';
-  fPri.value      = task ? task.priority : 'Medium';
+  fTitle.value = task ? task.title : '';
+  fCat.value   = task ? task.category : 'Work';
+  fPri.value   = task ? task.priority : 'Medium';
+  fDue.value   = task ? (task.due || '') : '';
   setStatus(task ? task.status : 'Pending');
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('show'));
@@ -73,74 +79,147 @@ function setStatus(val) {
   togDone.classList.toggle('active', val === 'Completed');
 }
 
-/* ── Save ── */
+/* -- Due date helpers -- */
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isOverdue(task) {
+  if(!task.due || task.status === 'Completed') return false;
+  return task.due < todayStr();
+}
+
+function isDueToday(task) {
+  if(!task.due || task.status === 'Completed') return false;
+  return task.due === todayStr();
+}
+
+function isDueSoon(task) {
+  if(!task.due || task.status === 'Completed') return false;
+  const diffDays = (new Date(task.due) - new Date(todayStr())) / 86400000;
+  return diffDays > 0 && diffDays <= 3;
+}
+
+function formatDue(dateStr) {
+  if(!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+/* -- Sort helpers -- */
+const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+
+function sortTasks(list, mode) {
+  const copy = [...list];
+  if(mode === 'oldest')   return copy.sort((a,b) => a.created - b.created);
+  if(mode === 'priority') return copy.sort((a,b) => (PRIORITY_ORDER[a.priority]||1) - (PRIORITY_ORDER[b.priority]||1));
+  if(mode === 'duedate')  return copy.sort((a,b) => {
+    if(!a.due && !b.due) return 0;
+    if(!a.due) return 1;
+    if(!b.due) return -1;
+    return a.due.localeCompare(b.due);
+  });
+  // default: newest
+  return copy.sort((a,b) => b.created - a.created);
+}
+
+/* -- Save -- */
 function doSave() {
   const title = fTitle.value.trim();
-  if(!title){ showToast('⚠ Please enter a title'); fTitle.focus(); return; }
+  if(!title){ showToast('Please enter a title'); fTitle.focus(); return; }
 
   if(editId) {
     const i = tasks.findIndex(t => t.id === editId);
-    if(i !== -1) tasks[i] = { ...tasks[i], title, category:fCat.value, priority:fPri.value, status:fStatus.value };
-    showToast('✓ Task updated');
+    if(i !== -1) tasks[i] = { ...tasks[i], title, category:fCat.value, priority:fPri.value, due:fDue.value, status:fStatus.value };
+    showToast('Task updated');
   } else {
-    tasks.unshift({ id: uid(), title, category:fCat.value, priority:fPri.value, status:fStatus.value, created:Date.now() });
-    showToast('✓ Task added');
+    tasks.unshift({ id: uid(), title, category:fCat.value, priority:fPri.value, due:fDue.value, status:fStatus.value, created:Date.now() });
+    showToast('Task added');
   }
   save(); closeMod(); render();
 }
 
-/* ── Render ── */
+/* -- Render -- */
 function render() {
-  const cat = fCatFilter.value;
-  const sta = fStatusFilter.value;
-  const filtered = tasks.filter(t =>
-    (cat === 'All' || t.category === cat) &&
-    (sta === 'All' || t.status === sta)
-  );
+  const cat    = fCatFilter.value;
+  const sta    = fStatusFilter.value;
+  const sort   = fSortFilter.value;
+  const query  = searchInput.value.trim().toLowerCase();
 
-  /* stats always from full list */
+  let filtered = tasks.filter(t => {
+    if(cat !== 'All' && t.category !== cat) return false;
+    if(sta === 'Overdue') { if(!isOverdue(t)) return false; }
+    else if(sta !== 'All' && t.status !== sta) return false;
+    if(query && !t.title.toLowerCase().includes(query)) return false;
+    return true;
+  });
+
+  filtered = sortTasks(filtered, sort);
+
+  /* stats from full list */
   const tot  = tasks.length;
   const done = tasks.filter(t => t.status === 'Completed').length;
+  const over = tasks.filter(t => isOverdue(t)).length;
   document.getElementById('sTot').textContent  = tot;
   document.getElementById('sDone').textContent = done;
   document.getElementById('sPend').textContent = tot - done;
+  document.getElementById('sOver').textContent = over;
   progFill.style.width = tot ? Math.round(done/tot*100)+'%' : '0%';
 
-  /* remove existing cards */
+  /* rebuild cards */
   grid.querySelectorAll('.card').forEach(el => el.remove());
   empty.style.display = filtered.length ? 'none' : 'block';
 
   filtered.forEach((task, i) => {
+    const overdue  = isOverdue(task);
+    const dueToday = isDueToday(task);
+    const dueSoon  = isDueSoon(task);
+
     const card = document.createElement('div');
-    card.className = 'card' + (task.status === 'Completed' ? ' done' : '');
+    let cls = 'card';
+    if(task.status === 'Completed') cls += ' done';
+    if(overdue)  cls += ' overdue';
+    if(dueToday) cls += ' due-today';
+    card.className = cls;
     card.dataset.cat = task.category;
     card.style.animationDelay = (i * 0.05) + 's';
 
-    const priIcon = { Low:'↓', Medium:'→', High:'↑' }[task.priority] || '';
+    const priIcon = { Low:'down', Medium:'right', High:'up' }[task.priority] || '';
 
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="ctitle">${esc(task.title)}</div>
-        <div class="card-btns">
-          <button class="cbtn edit" title="Edit">✎</button>
-          <button class="cbtn del" title="Delete">✕</button>
-        </div>
-      </div>
-      <div class="tags">
-        <span class="tag tag-${task.category}">${task.category}</span>
-        <span class="tag tag-${task.priority}">${priIcon} ${task.priority}</span>
-      </div>
-      <div class="card-foot">
-        <div class="status-tog">
-          <div class="chk">${task.status === 'Completed' ? '✓' : ''}</div>
-          <span>${task.status}</span>
-        </div>
-      </div>`;
+    let dueBadge = '';
+    if(task.due) {
+      let badgeCls = 'due-badge';
+      let badgeLabel = formatDue(task.due);
+      if(overdue)       { badgeCls += ' due-overdue'; badgeLabel = 'Overdue: ' + badgeLabel; }
+      else if(dueToday) { badgeCls += ' due-today-badge'; badgeLabel = 'Due today'; }
+      else if(dueSoon)  { badgeCls += ' due-soon'; badgeLabel = 'Soon: ' + badgeLabel; }
+      dueBadge = '<span class="' + badgeCls + '">' + badgeLabel + '</span>';
+    }
+
+    card.innerHTML =
+      '<div class="card-top">' +
+        '<div class="ctitle">' + esc(task.title) + '</div>' +
+        '<div class="card-btns">' +
+          '<button class="cbtn edit" title="Edit">&#9998;</button>' +
+          '<button class="cbtn del" title="Delete">&#10005;</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tags">' +
+        '<span class="tag tag-' + task.category + '">' + task.category + '</span>' +
+        '<span class="tag tag-' + task.priority + '">' + priIcon + ' ' + task.priority + '</span>' +
+        dueBadge +
+      '</div>' +
+      '<div class="card-foot">' +
+        '<div class="status-tog">' +
+          '<div class="chk">' + (task.status === 'Completed' ? '&#10003;' : '') + '</div>' +
+          '<span>' + task.status + '</span>' +
+        '</div>' +
+      '</div>';
 
     card.querySelector('.edit').addEventListener('click', () => openMod(task));
     card.querySelector('.del').addEventListener('click', () => {
       tasks = tasks.filter(t => t.id !== task.id);
-      save(); render(); showToast('✕ Task deleted');
+      save(); render(); showToast('Task deleted');
     });
     card.querySelector('.status-tog').addEventListener('click', () => {
       const t = tasks.find(x => x.id === task.id);
@@ -151,9 +230,9 @@ function render() {
   });
 }
 
-/* ── Helpers ── */
+/* -- Helpers -- */
 function save() { localStorage.setItem(KEY, JSON.stringify(tasks)); }
-function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let toastTimer;
