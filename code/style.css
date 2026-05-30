@@ -145,3 +145,37 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   .modal-body,.modal-foot{padding-left:18px;padding-right:18px}
   .modal-head{padding:18px 18px 0}
 }
+
+
+/* ===== FEATURE 1: SEARCH BAR ===== */
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-icon{position:absolute;left:12px;font-size:14px;color:var(--soft);pointer-events:none}
+.search-input{background:var(--s1);color:var(--text);border:1px solid var(--bor);border-radius:40px;padding:9px 16px 9px 34px;font-family:var(--font);font-size:13.5px;outline:none;cursor:text;transition:var(--tr);min-width:180px}
+.search-input::placeholder{color:var(--muted)}
+.search-input:hover,.search-input:focus{border-color:var(--acc);background-color:var(--s2);box-shadow:0 0 0 3px rgba(124,108,252,.15)}
+
+/* ===== FEATURE 2: DUE DATE BADGES ===== */
+.opt-label{font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
+.modal-body input[type=date]{width:100%;background:var(--s2);border:1px solid var(--bor);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:14.5px;outline:none;transition:var(--tr);color-scheme:dark}
+.modal-body input[type=date]:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(124,108,252,.2)}
+
+.due-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 10px;border-radius:20px;border:1px solid}
+.due-badge{color:var(--soft);border-color:rgba(136,136,170,.3);background:rgba(136,136,170,.08)}
+.due-overdue{color:var(--red)!important;border-color:rgba(255,92,124,.45)!important;background:rgba(255,92,124,.12)!important;animation:overdueFlash 2s ease-in-out infinite}
+.due-today-badge{color:var(--org)!important;border-color:rgba(255,159,63,.4)!important;background:rgba(255,159,63,.1)!important}
+.due-soon{color:var(--yel)!important;border-color:rgba(255,209,102,.4)!important;background:rgba(255,209,102,.1)!important}
+@keyframes overdueFlash{0%,100%{opacity:1}50%{opacity:.65}}
+
+/* overdue card styling */
+.card.overdue{border-color:rgba(255,92,124,.3)}
+.card.overdue::after{content:'';position:absolute;inset:0;border-radius:var(--r);box-shadow:inset 0 0 0 1px rgba(255,92,124,.2);pointer-events:none}
+.card.due-today{border-color:rgba(255,159,63,.35)}
+
+/* ===== FEATURE 3: SORT DROPDOWN + OVERDUE STAT ===== */
+.overdue-stat span{color:var(--red)!important}
+
+/* ===== RESPONSIVE UPDATES ===== */
+@media(max-width:640px){
+.search-input{min-width:100%;width:100%}
+.search-wrap{width:100%}
+}
