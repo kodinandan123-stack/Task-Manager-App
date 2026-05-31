@@ -6,29 +6,31 @@ try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e) { tasks = 
 let editId = null;
 
 /* -- DOM -- */
-const overlay      = document.getElementById('overlay');
-const modal        = document.getElementById('modal');
-const modalTitle   = document.getElementById('modalTitle');
+const overlay = document.getElementById('overlay');
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
 const openModalBtn = document.getElementById('openModal');
-const closeModal   = document.getElementById('closeModal');
-const cancelModal  = document.getElementById('cancelModal');
-const saveTask     = document.getElementById('saveTask');
-const grid         = document.getElementById('grid');
-const empty        = document.getElementById('empty');
-const toast        = document.getElementById('toast');
-const progFill     = document.getElementById('progFill');
+const closeModal = document.getElementById('closeModal');
+const cancelModal = document.getElementById('cancelModal');
+const saveTask = document.getElementById('saveTask');
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const toast = document.getElementById('toast');
+const progFill = document.getElementById('progFill');
 
-const fTitle       = document.getElementById('fTitle');
-const fCat         = document.getElementById('fCat');
-const fPri         = document.getElementById('fPri');
-const fDue         = document.getElementById('fDue');
-const fStatus      = document.getElementById('fStatus');
-const togPending   = document.getElementById('togPending');
-const togDone      = document.getElementById('togDone');
-const fCatFilter   = document.getElementById('fCatFilter');
-const fStatusFilter= document.getElementById('fStatusFilter');
-const fSortFilter  = document.getElementById('fSortFilter');
-const searchInput  = document.getElementById('searchInput');
+const fTitle = document.getElementById('fTitle');
+const fCat = document.getElementById('fCat');
+const fPri = document.getElementById('fPri');
+const fDue = document.getElementById('fDue');
+const fStatus = document.getElementById('fStatus');
+const togPending = document.getElementById('togPending');
+const togProgress = document.getElementById('togProgress');
+const togDone = document.getElementById('togDone');
+const fCatFilter = document.getElementById('fCatFilter');
+const fPriFilter = document.getElementById('fPriFilter');
+const fStatusFilter = document.getElementById('fStatusFilter');
+const fSortFilter = document.getElementById('fSortFilter');
+const searchInput = document.getElementById('searchInput');
 
 /* -- Init -- */
 render();
@@ -40,11 +42,13 @@ cancelModal.addEventListener('click', closeMod);
 overlay.addEventListener('click', e => { if(e.target === overlay) closeMod(); });
 saveTask.addEventListener('click', doSave);
 fCatFilter.addEventListener('change', render);
+fPriFilter.addEventListener('change', render);
 fStatusFilter.addEventListener('change', render);
 fSortFilter.addEventListener('change', render);
 searchInput.addEventListener('input', render);
 
 togPending.addEventListener('click', () => setStatus('Pending'));
+togProgress.addEventListener('click', () => setStatus('In Progress'));
 togDone.addEventListener('click', () => setStatus('Completed'));
 
 document.addEventListener('keydown', e => {
@@ -58,9 +62,9 @@ function openMod(task) {
   editId = task ? task.id : null;
   modalTitle.textContent = task ? 'Edit Task' : 'New Task';
   fTitle.value = task ? task.title : '';
-  fCat.value   = task ? task.category : 'Work';
-  fPri.value   = task ? task.priority : 'Medium';
-  fDue.value   = task ? (task.due || '') : '';
+  fCat.value = task ? task.category : 'Work';
+  fPri.value = task ? task.priority : 'Medium';
+  fDue.value = task ? (task.due || '') : '';
   setStatus(task ? task.status : 'Pending');
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('show'));
@@ -76,6 +80,7 @@ function closeMod() {
 function setStatus(val) {
   fStatus.value = val;
   togPending.classList.toggle('active', val === 'Pending');
+  togProgress.classList.toggle('active', val === 'In Progress');
   togDone.classList.toggle('active', val === 'Completed');
 }
 
@@ -111,9 +116,9 @@ const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
 
 function sortTasks(list, mode) {
   const copy = [...list];
-  if(mode === 'oldest')   return copy.sort((a,b) => a.created - b.created);
+  if(mode === 'oldest') return copy.sort((a,b) => a.created - b.created);
   if(mode === 'priority') return copy.sort((a,b) => (PRIORITY_ORDER[a.priority]||1) - (PRIORITY_ORDER[b.priority]||1));
-  if(mode === 'duedate')  return copy.sort((a,b) => {
+  if(mode === 'duedate') return copy.sort((a,b) => {
     if(!a.due && !b.due) return 0;
     if(!a.due) return 1;
     if(!b.due) return -1;
@@ -141,13 +146,15 @@ function doSave() {
 
 /* -- Render -- */
 function render() {
-  const cat    = fCatFilter.value;
-  const sta    = fStatusFilter.value;
-  const sort   = fSortFilter.value;
-  const query  = searchInput.value.trim().toLowerCase();
+  const cat = fCatFilter.value;
+  const pri = fPriFilter.value;
+  const sta = fStatusFilter.value;
+  const sort = fSortFilter.value;
+  const query = searchInput.value.trim().toLowerCase();
 
   let filtered = tasks.filter(t => {
     if(cat !== 'All' && t.category !== cat) return false;
+    if(pri !== 'All' && t.priority !== pri) return false;
     if(sta === 'Overdue') { if(!isOverdue(t)) return false; }
     else if(sta !== 'All' && t.status !== sta) return false;
     if(query && !t.title.toLowerCase().includes(query)) return false;
@@ -157,12 +164,14 @@ function render() {
   filtered = sortTasks(filtered, sort);
 
   /* stats from full list */
-  const tot  = tasks.length;
+  const tot = tasks.length;
   const done = tasks.filter(t => t.status === 'Completed').length;
+  const inprog = tasks.filter(t => t.status === 'In Progress').length;
   const over = tasks.filter(t => isOverdue(t)).length;
-  document.getElementById('sTot').textContent  = tot;
+  document.getElementById('sTot').textContent = tot;
   document.getElementById('sDone').textContent = done;
-  document.getElementById('sPend').textContent = tot - done;
+  document.getElementById('sPend').textContent = tasks.filter(t => t.status === 'Pending').length;
+  document.getElementById('sInProg').textContent = inprog;
   document.getElementById('sOver').textContent = over;
   progFill.style.width = tot ? Math.round(done/tot*100)+'%' : '0%';
 
@@ -171,30 +180,38 @@ function render() {
   empty.style.display = filtered.length ? 'none' : 'block';
 
   filtered.forEach((task, i) => {
-    const overdue  = isOverdue(task);
+    const overdue = isOverdue(task);
     const dueToday = isDueToday(task);
-    const dueSoon  = isDueSoon(task);
+    const dueSoon = isDueSoon(task);
 
     const card = document.createElement('div');
     let cls = 'card';
     if(task.status === 'Completed') cls += ' done';
-    if(overdue)  cls += ' overdue';
+    if(task.status === 'In Progress') cls += ' in-progress';
+    if(overdue) cls += ' overdue';
     if(dueToday) cls += ' due-today';
     card.className = cls;
     card.dataset.cat = task.category;
+    card.dataset.pri = task.priority;
     card.style.animationDelay = (i * 0.05) + 's';
 
-    const priIcon = { Low:'down', Medium:'right', High:'up' }[task.priority] || '';
+    const priIcon = { Low:'\u2193', Medium:'\u2192', High:'\u2191' }[task.priority] || '';
 
     let dueBadge = '';
     if(task.due) {
       let badgeCls = 'due-badge';
       let badgeLabel = formatDue(task.due);
-      if(overdue)       { badgeCls += ' due-overdue'; badgeLabel = 'Overdue: ' + badgeLabel; }
+      if(overdue) { badgeCls += ' due-overdue'; badgeLabel = 'Overdue: ' + badgeLabel; }
       else if(dueToday) { badgeCls += ' due-today-badge'; badgeLabel = 'Due today'; }
-      else if(dueSoon)  { badgeCls += ' due-soon'; badgeLabel = 'Soon: ' + badgeLabel; }
+      else if(dueSoon) { badgeCls += ' due-soon'; badgeLabel = 'Soon: ' + badgeLabel; }
       dueBadge = '<span class="' + badgeCls + '">' + badgeLabel + '</span>';
     }
+
+    const statusLabel = task.status === 'In Progress' ? '&#9654; In Progress' :
+                        task.status === 'Completed'   ? '&#10003; Completed'  :
+                                                        'Pending';
+    const checkIcon   = task.status === 'Completed'   ? '&#10003;' :
+                        task.status === 'In Progress' ? '&#9654;'  : '';
 
     card.innerHTML =
       '<div class="card-top">' +
@@ -211,8 +228,8 @@ function render() {
       '</div>' +
       '<div class="card-foot">' +
         '<div class="status-tog">' +
-          '<div class="chk">' + (task.status === 'Completed' ? '&#10003;' : '') + '</div>' +
-          '<span>' + task.status + '</span>' +
+          '<div class="chk">' + checkIcon + '</div>' +
+          '<span>' + statusLabel + '</span>' +
         '</div>' +
       '</div>';
 
@@ -223,7 +240,13 @@ function render() {
     });
     card.querySelector('.status-tog').addEventListener('click', () => {
       const t = tasks.find(x => x.id === task.id);
-      if(t){ t.status = t.status === 'Completed' ? 'Pending' : 'Completed'; save(); render(); }
+      if(t){
+        // Cycle: Pending -> In Progress -> Completed -> Pending
+        if(t.status === 'Pending') t.status = 'In Progress';
+        else if(t.status === 'In Progress') t.status = 'Completed';
+        else t.status = 'Pending';
+        save(); render();
+      }
     });
 
     grid.appendChild(card);
