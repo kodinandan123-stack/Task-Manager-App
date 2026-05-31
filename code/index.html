@@ -42,6 +42,7 @@
 <label>Status</label>
 <div class="toggle-wrap">
 <button class="tog active" id="togPending" data-val="Pending">Pending</button>
+<button class="tog" id="togProgress" data-val="In Progress">In Progress</button>
 <button class="tog" id="togDone" data-val="Completed">Completed</button>
 </div>
 <input type="hidden" id="fStatus" value="Pending"/>
@@ -64,6 +65,8 @@
 <div class="sdiv"></div>
 <div class="stat"><span id="sPend">0</span><small>Pending</small></div>
 <div class="sdiv"></div>
+<div class="stat inprogress-stat"><span id="sInProg">0</span><small>In Progress</small></div>
+<div class="sdiv"></div>
 <div class="stat overdue-stat"><span id="sOver">0</span><small>Overdue</small></div>
 </div>
 </div>
@@ -83,9 +86,16 @@
 <option value="Study">Study</option>
 <option value="Personal">Personal</option>
 </select>
+<select class="fsel" id="fPriFilter">
+<option value="All">All Priorities</option>
+<option value="High">High Priority</option>
+<option value="Medium">Medium Priority</option>
+<option value="Low">Low Priority</option>
+</select>
 <select class="fsel" id="fStatusFilter">
 <option value="All">All Status</option>
 <option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
 <option value="Completed">Completed</option>
 <option value="Overdue">Overdue</option>
 </select>
