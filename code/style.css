@@ -1,26 +1,27 @@
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0f0f13;
-  --s1:#18181f;
-  --s2:#21212b;
-  --s3:#2a2a36;
-  --bor:#33334a;
-  --acc:#7c6cfc;
-  --acc2:#56e39f;
-  --text:#ededf5;
-  --soft:#8888aa;
-  --muted:#55556a;
-  --red:#ff5c7c;
-  --org:#ff9f3f;
-  --yel:#ffd166;
-  --grn:#56e39f;
-  --blu:#60b4ff;
-  --pur:#c77dff;
-  --r:14px;
-  --rs:8px;
-  --tr:.25s cubic-bezier(.4,0,.2,1);
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
+--bg:#0f0f13;
+--s1:#18181f;
+--s2:#21212b;
+--s3:#2a2a36;
+--bor:#33334a;
+--acc:#7c6cfc;
+--acc2:#56e39f;
+--text:#ededf5;
+--soft:#8888aa;
+--muted:#55556a;
+--red:#ff5c7c;
+--org:#ff9f3f;
+--yel:#ffd166;
+--grn:#56e39f;
+--blu:#60b4ff;
+--pur:#c77dff;
+--cya:#00d4ff;
+--r:14px;
+--rs:8px;
+--tr:.25s cubic-bezier(.4,0,.2,1);
+--font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
 
@@ -71,6 +72,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .card.done{opacity:.58}
 .card.done .ctitle{text-decoration:line-through;color:var(--soft)}
 
+/* ===== FEATURE 1: PRIORITY LEVELS — Left border accent per priority ===== */
+.card[data-pri="High"]{border-left:3px solid var(--red)}
+.card[data-pri="Medium"]{border-left:3px solid var(--yel)}
+.card[data-pri="Low"]{border-left:3px solid var(--grn)}
+
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .ctitle{font-size:15.5px;font-weight:700;line-height:1.4;flex:1}
 .card-btns{display:flex;gap:5px;flex-shrink:0}
@@ -94,7 +100,32 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .status-tog:hover{color:var(--text)}
 .chk{width:18px;height:18px;border-radius:50%;border:2px solid var(--bor);display:flex;align-items:center;justify-content:center;font-size:10px;transition:var(--tr);flex-shrink:0}
 .card.done .chk{background:var(--acc2);border-color:var(--acc2);color:#0f0f13}
-.card:not(.done) .chk{color:transparent}
+.card:not(.done):not(.in-progress) .chk{color:transparent}
+
+/* ===== FEATURE 2: DUE DATES — Badges and date input ===== */
+.opt-label{font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
+.modal-body input[type=date]{width:100%;background:var(--s2);border:1px solid var(--bor);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:14.5px;outline:none;transition:var(--tr);color-scheme:dark}
+.modal-body input[type=date]:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(124,108,252,.2)}
+
+.due-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 10px;border-radius:20px;border:1px solid}
+.due-badge{color:var(--soft);border-color:rgba(136,136,170,.3);background:rgba(136,136,170,.08)}
+.due-overdue{color:var(--red)!important;border-color:rgba(255,92,124,.45)!important;background:rgba(255,92,124,.12)!important;animation:overdueFlash 2s ease-in-out infinite}
+.due-today-badge{color:var(--org)!important;border-color:rgba(255,159,63,.4)!important;background:rgba(255,159,63,.1)!important}
+.due-soon{color:var(--yel)!important;border-color:rgba(255,209,102,.4)!important;background:rgba(255,209,102,.1)!important}
+@keyframes overdueFlash{0%,100%{opacity:1}50%{opacity:.65}}
+
+/* overdue card styling */
+.card.overdue{border-color:rgba(255,92,124,.3)}
+.card.overdue::after{content:'';position:absolute;inset:0;border-radius:var(--r);box-shadow:inset 0 0 0 1px rgba(255,92,124,.2);pointer-events:none}
+.card.due-today{border-color:rgba(255,159,63,.35)}
+
+/* ===== FEATURE 3: STATUS TRACKING — In Progress state ===== */
+.card.in-progress{border-color:rgba(0,212,255,.3)}
+.card.in-progress::after{content:'';position:absolute;inset:0;border-radius:var(--r);box-shadow:inset 0 0 0 1px rgba(0,212,255,.15);pointer-events:none}
+.card.in-progress .chk{background:rgba(0,212,255,.2);border-color:var(--cya);color:var(--cya)}
+.card.in-progress .status-tog span{color:var(--cya)}
+.inprogress-stat span{color:var(--cya)!important}
+.overdue-stat span{color:var(--red)!important}
 
 /* ===== MODAL ===== */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s}
@@ -119,8 +150,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .row2>div{flex:1;display:flex;flex-direction:column}
 
 .toggle-wrap{display:flex;background:var(--s2);border:1px solid var(--bor);border-radius:var(--rs);padding:4px;gap:4px}
-.tog{flex:1;padding:9px;border-radius:6px;border:none;background:transparent;color:var(--soft);font-family:var(--font);font-size:14px;cursor:pointer;transition:var(--tr)}
+.tog{flex:1;padding:9px;border-radius:6px;border:none;background:transparent;color:var(--soft);font-family:var(--font);font-size:13px;cursor:pointer;transition:var(--tr)}
 .tog.active{background:var(--acc);color:#fff;font-weight:600}
+#togProgress.active{background:var(--cya);color:#0f0f13}
 
 .modal-foot{display:flex;gap:10px;padding:0 26px 22px}
 .btn-cancel{flex:1;padding:12px;border-radius:var(--rs);border:1px solid var(--bor);background:transparent;color:var(--soft);font-family:var(--font);font-size:14px;cursor:pointer;transition:var(--tr)}
@@ -132,50 +164,26 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--s2);border:1px solid var(--bor);color:var(--text);padding:11px 24px;border-radius:40px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .35s ease;z-index:999;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ===== RESPONSIVE ===== */
-@media(max-width:640px){
-  .header-inner{padding:14px 16px}
-  .stats{padding:8px 16px;gap:14px}
-  .stat span{font-size:18px}
-  .main{padding:20px 16px 48px}
-  .toolbar{flex-direction:column;align-items:stretch}
-  .add-btn{text-align:center}
-  .grid{grid-template-columns:1fr}
-  .row2{flex-direction:column}
-  .modal-body,.modal-foot{padding-left:18px;padding-right:18px}
-  .modal-head{padding:18px 18px 0}
-}
-
-
-/* ===== FEATURE 1: SEARCH BAR ===== */
+/* ===== SEARCH BAR ===== */
 .search-wrap{position:relative;display:flex;align-items:center}
 .search-icon{position:absolute;left:12px;font-size:14px;color:var(--soft);pointer-events:none}
 .search-input{background:var(--s1);color:var(--text);border:1px solid var(--bor);border-radius:40px;padding:9px 16px 9px 34px;font-family:var(--font);font-size:13.5px;outline:none;cursor:text;transition:var(--tr);min-width:180px}
 .search-input::placeholder{color:var(--muted)}
 .search-input:hover,.search-input:focus{border-color:var(--acc);background-color:var(--s2);box-shadow:0 0 0 3px rgba(124,108,252,.15)}
 
-/* ===== FEATURE 2: DUE DATE BADGES ===== */
-.opt-label{font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
-.modal-body input[type=date]{width:100%;background:var(--s2);border:1px solid var(--bor);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:14.5px;outline:none;transition:var(--tr);color-scheme:dark}
-.modal-body input[type=date]:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(124,108,252,.2)}
-
-.due-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 10px;border-radius:20px;border:1px solid}
-.due-badge{color:var(--soft);border-color:rgba(136,136,170,.3);background:rgba(136,136,170,.08)}
-.due-overdue{color:var(--red)!important;border-color:rgba(255,92,124,.45)!important;background:rgba(255,92,124,.12)!important;animation:overdueFlash 2s ease-in-out infinite}
-.due-today-badge{color:var(--org)!important;border-color:rgba(255,159,63,.4)!important;background:rgba(255,159,63,.1)!important}
-.due-soon{color:var(--yel)!important;border-color:rgba(255,209,102,.4)!important;background:rgba(255,209,102,.1)!important}
-@keyframes overdueFlash{0%,100%{opacity:1}50%{opacity:.65}}
-
-/* overdue card styling */
-.card.overdue{border-color:rgba(255,92,124,.3)}
-.card.overdue::after{content:'';position:absolute;inset:0;border-radius:var(--r);box-shadow:inset 0 0 0 1px rgba(255,92,124,.2);pointer-events:none}
-.card.due-today{border-color:rgba(255,159,63,.35)}
-
-/* ===== FEATURE 3: SORT DROPDOWN + OVERDUE STAT ===== */
-.overdue-stat span{color:var(--red)!important}
-
-/* ===== RESPONSIVE UPDATES ===== */
+/* ===== RESPONSIVE ===== */
 @media(max-width:640px){
+.header-inner{padding:14px 16px}
+.stats{padding:8px 14px;gap:12px}
+.stat span{font-size:17px}
+.main{padding:20px 16px 48px}
+.toolbar{flex-direction:column;align-items:stretch}
+.add-btn{text-align:center}
+.grid{grid-template-columns:1fr}
+.row2{flex-direction:column}
+.modal-body,.modal-foot{padding-left:18px;padding-right:18px}
+.modal-head{padding:18px 18px 0}
 .search-input{min-width:100%;width:100%}
 .search-wrap{width:100%}
+.tog{font-size:12px;padding:8px 6px}
 }
